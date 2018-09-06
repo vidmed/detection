@@ -1,8 +1,9 @@
 # Installation
 1. Install golang
 https://golang.org/doc/install
-2. `cd cmd`
-3. `go build && ./cmd -config=config.toml` 
+2. `go get github.com/vidmed/detection`
+3. `cd $GOPATH/src/github.com/vidmed/detection/cmd`
+4. `go build && ./cmd -config=config.toml` 
 OR 
 `go install && cmd -config=config.toml`
 
