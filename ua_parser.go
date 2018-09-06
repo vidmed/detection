@@ -42,6 +42,10 @@ func (p *FiftyOneDegreesParser) Parse(userAgent string) (*UserAgentData, error) 
 	return uaData, nil
 }
 
+func (p *FiftyOneDegreesParser) Close() {
+	p.provider.Close()
+}
+
 func NewFiftyoneDegreesParser(DBPath string) (*FiftyOneDegreesParser, error) {
 	provider, err := fiftyonedegrees.NewFiftyoneDegreesProvider(DBPath,
 		`BrowserName, BrowserVersion, PlatformName, PlatformVendor, PlatformVersion, IsMobile, DeviceType`, 0, 0)

@@ -33,6 +33,10 @@ func (d *MaxMindCountryDetector) Detect(ip net.IP) (*CountryData, error) {
 	}, nil
 }
 
+func (d *MaxMindCountryDetector) Close() {
+	d.countryDB.Close()
+}
+
 func NewMaxMindCountryDetector(DBPath string) (*MaxMindCountryDetector, error) {
 	countryDB, err := geoip2.Open(DBPath)
 	if err != nil {

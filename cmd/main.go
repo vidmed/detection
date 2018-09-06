@@ -21,8 +21,11 @@ import (
 )
 
 var (
-	configFileName   = flag.String("config", "config.toml", "Config file name")
+	configFileName = flag.String("config", "config.toml", "Config file name")
+
 	bidRequestParser *detection.BidRequestParser
+	parser           *detection.FiftyOneDegreesParser
+	countryDetector  *detection.MaxMindCountryDetector
 )
 
 func init() {
@@ -34,17 +37,20 @@ func init() {
 	// Init logging, logger goes first since other components may use it
 	logger.Init(int(GetConfig().Main.LogLevel))
 
-	parser, err := detection.NewFiftyoneDegreesParser(config.Main.FiftyOneDegreesDBPath)
+	// Init 51Degrees Parser (parse User Agent)
+	parser, err = detection.NewFiftyoneDegreesParser(config.Main.FiftyOneDegreesDBPath)
 	if err != nil {
 		logger.Get().Fatalf("ERROR creating FiftyoneDegreesParser: %s\n", err.Error())
 	}
 
-	country_detector, err := detection.NewMaxMindCountryDetector(config.Main.MaxMinDBPath)
+	// Init MaxMind Detector (detect country by IP)
+	countryDetector, err = detection.NewMaxMindCountryDetector(config.Main.MaxMinDBPath)
 	if err != nil {
+		parser.Close()
 		logger.Get().Fatalf("ERROR creating MaxMindCountryDetector: %s\n", err.Error())
 	}
 
-	bidRequestParser = detection.NewBidRequestParser(country_detector, parser)
+	bidRequestParser = detection.NewBidRequestParser(countryDetector, parser)
 	logger.Get().Info("BidRequestParser inited successfully")
 }
 
@@ -65,6 +71,8 @@ func runServer() {
 		logger.Get().Infof("Listening on http://%s\n", hs.Addr)
 
 		if err := hs.ListenAndServe(); err != http.ErrServerClosed {
+			parser.Close()
+			countryDetector.Close()
 			logger.Get().Fatal(err.Error())
 		}
 	}()
@@ -81,6 +89,9 @@ func runServer() {
 		logger.Get().Infof("Server stopped")
 	}
 	cancel()
+
+	parser.Close()
+	countryDetector.Close()
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
